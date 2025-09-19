@@ -42,11 +42,7 @@ public class TerraFirmaCraftAnvilHelperClient {
         if (anvilRecipeInfo != null && anvilRecipeInfo.anvilRecipe == anvilRecipe) {
             return anvilRecipeInfo;
         }
-        anvilRecipeInfo = TerraFirmaCraftAnvilRecipeInfo.getRecipeInfo(anvilRecipe);
-        if (anvilRecipeInfo != null) {
-            RECIPE_CACHE = anvilRecipeInfo;
-        }
-        return anvilRecipeInfo;
+        return RECIPE_CACHE = TerraFirmaCraftAnvilRecipeInfo.getRecipeInfo(anvilRecipe);
     }
 
     @SubscribeEvent

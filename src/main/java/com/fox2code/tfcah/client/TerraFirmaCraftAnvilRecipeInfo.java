@@ -7,20 +7,21 @@ import net.dries007.tfc.common.recipes.AnvilRecipe;
 import java.util.HashSet;
 
 public final class TerraFirmaCraftAnvilRecipeInfo {
+    private static final ForgeStep[] LAST3STEPS_INVALID = new ForgeStep[0];
     public final AnvilRecipe anvilRecipe;
-    public final boolean notLastStep;
     public final ForgeStep[] last3Steps;
+    public final boolean invalid;
 
-    private TerraFirmaCraftAnvilRecipeInfo(AnvilRecipe anvilRecipe, boolean notLastStep, ForgeStep[] last3Steps) {
+    private TerraFirmaCraftAnvilRecipeInfo(AnvilRecipe anvilRecipe, ForgeStep[] last3Steps, boolean invalid) {
         this.anvilRecipe = anvilRecipe;
-        this.notLastStep = notLastStep;
         this.last3Steps = last3Steps;
+        this.invalid = invalid;
     }
 
     public static TerraFirmaCraftAnvilRecipeInfo getRecipeInfo(AnvilRecipe anvilRecipe) {
         ForgeStep[] last3Steps = new ForgeStep[3];
         HashSet<ForgeStep> hitAny = new HashSet<>();
-        boolean notLastStep = true;
+        HashSet<ForgeStep> hitNotLast = new HashSet<>();
         for (ForgeRule rule : anvilRecipe.getRules()) {
             ForgeStep forgeStep = ForgeRuleAccessor.getForgeStep(rule);
             switch (ForgeRuleAccessor.getOrder(rule)) {
@@ -30,14 +31,10 @@ public final class TerraFirmaCraftAnvilRecipeInfo {
                 }
                 case LAST: {
                     last3Steps[2] = forgeStep;
-                    notLastStep = false;
                     break;
                 }
                 case NOT_LAST: {
-                    if (notLastStep) {
-                        last3Steps[2] = forgeStep;
-                    }
-                    hitAny.add(forgeStep);
+                    hitNotLast.add(forgeStep);
                     break;
                 }
                 case THIRD_LAST: {
@@ -62,30 +59,31 @@ public final class TerraFirmaCraftAnvilRecipeInfo {
                     break;
                 }
                 if (i == 0) {
-                    if (notLastStep && last3Steps[2] != forgeStep) {
-                        last3Steps[2] = forgeStep;
-                    } else {
-                        // Unsolvable
-                        return null;
-                    }
+                    // Unsolvable
+                    return makeInvalid(anvilRecipe);
                 }
             }
         }
-        if (last3Steps[2] == null) {
-            notLastStep = false;
-        }
-        // Support notLastStep.
-        if (notLastStep) {
-            if (last3Steps[1] == null) {
-                last3Steps[1] = last3Steps[2];
-                last3Steps[2] = null;
-                notLastStep = false;
-            } else if (last3Steps[0] == null) {
-                last3Steps[0] = last3Steps[2];
-                last3Steps[2] = null;
-                notLastStep = false;
+        hitNotLast.remove(last3Steps[0]);
+        hitNotLast.remove(last3Steps[1]);
+        for (ForgeStep forgeStep : hitNotLast) {
+            if (forgeStep != null &&
+                    forgeStep != last3Steps[0] &&
+                    forgeStep != last3Steps[1]) {
+                if (last3Steps[1] == null) {
+                    last3Steps[1] = forgeStep;
+                } else if (last3Steps[0] == null) {
+                    last3Steps[0] = forgeStep;
+                } else {
+                    // Unsolvable
+                    return makeInvalid(anvilRecipe);
+                }
             }
         }
-        return new TerraFirmaCraftAnvilRecipeInfo(anvilRecipe, notLastStep, last3Steps);
+        return new TerraFirmaCraftAnvilRecipeInfo(anvilRecipe, last3Steps, false);
+    }
+
+    private static TerraFirmaCraftAnvilRecipeInfo makeInvalid(AnvilRecipe anvilRecipe) {
+        return new TerraFirmaCraftAnvilRecipeInfo(anvilRecipe, LAST3STEPS_INVALID, true);
     }
 }

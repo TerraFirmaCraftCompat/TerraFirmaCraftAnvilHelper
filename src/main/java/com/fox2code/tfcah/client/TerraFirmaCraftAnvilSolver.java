@@ -9,7 +9,7 @@ public final class TerraFirmaCraftAnvilSolver {
     private TerraFirmaCraftAnvilSolver() {}
 
     public static TerraFirmaCraftAnvilSolution solveFor(TerraFirmaCraftAnvilRecipeInfo recipe, Forging forging) {
-        if (recipe == null || forging == null || recipe.notLastStep) {
+        if (recipe == null || forging == null || recipe.invalid) {
             return TerraFirmaCraftAnvilSolution.UNDEFINED;
         }
         int current = forging.work();
