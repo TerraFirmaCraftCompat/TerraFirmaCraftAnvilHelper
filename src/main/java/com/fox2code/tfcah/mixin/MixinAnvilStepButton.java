@@ -4,7 +4,7 @@ import com.fox2code.tfcah.client.GuiGraphicsHelper;
 import com.fox2code.tfcah.client.TerraFirmaCraftAnvilHelperClient;
 import net.dries007.tfc.client.screen.AnvilScreen;
 import net.dries007.tfc.client.screen.button.AnvilStepButton;
-import net.dries007.tfc.common.component.forge.ForgeStep;
+import net.dries007.tfc.common.capabilities.forge.ForgeStep;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import org.spongepowered.asm.mixin.Final;
@@ -16,7 +16,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(AnvilStepButton.class)
 public class MixinAnvilStepButton extends Button {
-    @Shadow
+    @Shadow(remap = false)
     @Final
     private ForgeStep step;
 
@@ -24,7 +24,7 @@ public class MixinAnvilStepButton extends Button {
         super(builder);
     }
 
-    @Inject(method = "renderWidget", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "renderWidget", at = @At("HEAD"), cancellable = true, remap = false)
     public void onRenderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
         if (TerraFirmaCraftAnvilHelperClient.shouldGlow(this.step)) {
             GuiGraphicsHelper.blitYellowBlink(graphics, AnvilScreen.BACKGROUND, this.getX(), this.getY(), 16, 16,

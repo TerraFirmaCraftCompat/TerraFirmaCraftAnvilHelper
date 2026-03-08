@@ -11,7 +11,7 @@ import net.minecraft.world.entity.player.Inventory;
 import org.spongepowered.asm.mixin.Mixin;
 
 @Mixin(AnvilScreen.class)
-public class MixinAnvilScreen extends BlockEntityScreen<AnvilBlockEntity, AnvilContainer> implements AnvilScreenAccessor {
+public abstract class MixinAnvilScreen extends BlockEntityScreen<AnvilBlockEntity, AnvilContainer> implements AnvilScreenAccessor {
     public MixinAnvilScreen(AnvilContainer container, Inventory playerInventory, Component name, ResourceLocation texture) {
         super(container, playerInventory, name, texture);
     }

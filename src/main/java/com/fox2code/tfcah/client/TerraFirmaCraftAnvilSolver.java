@@ -1,7 +1,7 @@
 package com.fox2code.tfcah.client;
 
-import net.dries007.tfc.common.component.forge.ForgeStep;
-import net.dries007.tfc.common.component.forge.Forging;
+import net.dries007.tfc.common.capabilities.forge.ForgeStep;
+import net.dries007.tfc.common.capabilities.forge.Forging;
 
 import java.util.ArrayList;
 
@@ -12,8 +12,8 @@ public final class TerraFirmaCraftAnvilSolver {
         if (recipe == null || forging == null || recipe.invalid) {
             return TerraFirmaCraftAnvilSolution.UNDEFINED;
         }
-        int current = forging.work();
-        int target = forging.target();
+        int current = forging.getWork();
+        int target = forging.getWorkTarget();
         int totalRestrictions = 0;
         int totalMinForcedMoves = 0;
         int endWorkDiff = 0;
@@ -42,7 +42,7 @@ public final class TerraFirmaCraftAnvilSolver {
                 break;
             }
             case 1: {
-                ForgeStep forgeStepForced = forgeSteps.removeLast();
+                ForgeStep forgeStepForced = forgeSteps.remove(-1);
                 boolean has = false;
                 for (ForgeStep forgeStep : recipe.last3Steps) {
                     if (forgeStep != null) {
@@ -56,8 +56,8 @@ public final class TerraFirmaCraftAnvilSolver {
             }
             case 2: {
                 // Can only happen for [type, null, null] so just optimize for that.
-                ForgeStep forgeStepForce1 = forgeSteps.removeLast();
-                ForgeStep forgeStepForce2 = forgeSteps.removeLast();
+                ForgeStep forgeStepForce1 = forgeSteps.remove(-1);
+                ForgeStep forgeStepForce2 = forgeSteps.remove(-1);
                 forgeSteps.add(recipe.last3Steps[0]);
                 forgeSteps.add(forgeStepForce1);
                 forgeSteps.add(forgeStepForce2);

@@ -3,7 +3,7 @@ package com.fox2code.tfcah.client;
 import com.fox2code.tfcah.TerraFirmaCraftAnvilHelper;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import net.dries007.tfc.common.component.forge.ForgeStep;
+import net.dries007.tfc.common.capabilities.forge.ForgeStep;
 
 import java.util.*;
 

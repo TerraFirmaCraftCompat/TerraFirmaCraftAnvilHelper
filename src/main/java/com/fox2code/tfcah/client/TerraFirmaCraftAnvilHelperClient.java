@@ -2,27 +2,30 @@ package com.fox2code.tfcah.client;
 
 import com.fox2code.tfcah.TerraFirmaCraftAnvilHelper;
 import net.dries007.tfc.common.blockentities.AnvilBlockEntity;
-import net.dries007.tfc.common.component.forge.ForgeStep;
-import net.dries007.tfc.common.component.forge.Forging;
+import net.dries007.tfc.common.capabilities.forge.ForgeStep;
+import net.dries007.tfc.common.capabilities.forge.Forging;
 import net.dries007.tfc.common.recipes.AnvilRecipe;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.ModContainer;
-import net.neoforged.fml.common.Mod;
-import net.neoforged.neoforge.client.event.RenderGuiEvent;
-import net.neoforged.neoforge.common.NeoForge;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.RenderGuiEvent;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 
-@Mod(value = TerraFirmaCraftAnvilHelper.MODID, dist = Dist.CLIENT)
+@Mod.EventBusSubscriber(modid = TerraFirmaCraftAnvilHelper.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class TerraFirmaCraftAnvilHelperClient {
     private static TerraFirmaCraftAnvilSolution SOLUTION = TerraFirmaCraftAnvilSolution.UNDEFINED;
     private static TerraFirmaCraftAnvilRecipeInfo RECIPE_CACHE = null;
     private static ForgeStep nextForgeStep;
 
-    public TerraFirmaCraftAnvilHelperClient(IEventBus modEventBus, ModContainer modContainer) {
-        NeoForge.EVENT_BUS.register(this);
+    @SubscribeEvent
+    public static void onClientSetup(FMLClientSetupEvent event) {
+        MinecraftForge.EVENT_BUS.register(new TerraFirmaCraftAnvilHelperClient());
+    }
+
+    public TerraFirmaCraftAnvilHelperClient() {
         Thread asyncLoadThread = new Thread(() -> {
             long startMs = System.currentTimeMillis();
             if (TerraFirmaCraftAnvilSolveTable.checkSanity()) {
@@ -56,15 +59,17 @@ public class TerraFirmaCraftAnvilHelperClient {
             // AnvilContainer anvilContainer = anvilScreenAccessor.tfcah$getAnvilContainer();
             AnvilBlockEntity anvilBlockEntity = anvilScreenAccessor.tfcah$getAnvilBlockEntity();
             Forging forging = anvilBlockEntity.getMainInputForging();
-            AnvilRecipe anvilRecipe = forging.getRecipe();
+            assert anvilBlockEntity.getLevel() != null;
+            if (forging == null) return;
+            AnvilRecipe anvilRecipe = forging.getRecipe(anvilBlockEntity.getLevel());
             if (anvilRecipe == null) {
                 nextForgeStep = null;
                 return;
             }
-            int steps = SOLUTION.getStepForForging(forging);
+            int steps = SOLUTION.getStepForForging(forging, anvilBlockEntity.getLevel());
             if (steps == -1) {
                 SOLUTION = TerraFirmaCraftAnvilSolver.solveFor(getRecipeInfo(anvilRecipe), forging);
-                steps = SOLUTION.getStepForForging(forging);
+                steps = SOLUTION.getStepForForging(forging, anvilBlockEntity.getLevel());
             }
             if (steps == -1) {
                 nextForgeStep = null;

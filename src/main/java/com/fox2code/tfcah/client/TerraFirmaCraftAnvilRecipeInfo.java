@@ -1,7 +1,7 @@
 package com.fox2code.tfcah.client;
 
-import net.dries007.tfc.common.component.forge.ForgeRule;
-import net.dries007.tfc.common.component.forge.ForgeStep;
+import net.dries007.tfc.common.capabilities.forge.ForgeRule;
+import net.dries007.tfc.common.capabilities.forge.ForgeStep;
 import net.dries007.tfc.common.recipes.AnvilRecipe;
 
 import java.util.HashSet;

@@ -1,10 +1,22 @@
+buildscript {
+    repositories {
+        // These repositories are only for Gradle plugins, put any other repositories in the repository block further below
+        maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'org.spongepowered:mixingradle:0.7-SNAPSHOT'
+    }
+}
+
 plugins {
     id 'java-library'
     id 'maven-publish'
     id 'idea'
-    id 'net.neoforged.moddev' version '2.0.107'
-    // id 'net.neoforged.licenser' version '0.7.2'
+    id 'net.minecraftforge.gradle' version '[6.0.16,6.2)'
 }
+
+apply plugin: 'org.spongepowered.mixin'
 
 version = mod_version
 group = mod_group_id
@@ -17,57 +29,47 @@ base {
     archivesName = "TerraFirmaCraftAnvilHelper"
 }
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
-neoForge {
-    // Specify the version of NeoForge to use.
-    version = project.neo_version
-    validateAccessTransformers = true
+minecraft {
+    mappings channel: mapping_channel, version: mapping_version
 
-    parchment {
-        mappingsVersion = project.parchment_mappings_version
-        minecraftVersion = project.parchment_minecraft_version
-    }
-
+    copyIdeResources = true
     // This line is optional. Access Transformers are automatically detected
-    // accessTransformers.add('src/main/resources/META-INF/accesstransformer.cfg')
+    accessTransformer = file("src/main/resources/META-INF/accesstransformer.cfg")
 
     // Default run configurations.
     // These can be tweaked, removed, or duplicated as needed.
     runs {
         configureEach {
             // Only JBR allows enhanced class redefinition, so ignore the option for any other JDKs
-            jvmArguments.addAll("-XX:+IgnoreUnrecognizedVMOptions", "-XX:+AllowEnhancedClassRedefinition", "-ea")
+            args "-XX:+IgnoreUnrecognizedVMOptions", "-XX:+AllowEnhancedClassRedefinition", "-ea"
         }
         client {
-            client()
 
             // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
-            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            property 'forge.enabledGameTestNamespaces', mod_id
         }
 
         server {
-            server()
-            programArgument '--nogui'
-            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            arg '--nogui'
+            property 'forge.enabledGameTestNamespaces', mod_id
         }
 
         // This run config launches GameTestServer and runs all registered gametests, then exits.
         // By default, the server will crash when no gametests are provided.
         // The gametest system is also enabled by default for other run configs under the /test command.
         gameTestServer {
-            type = "gameTestServer"
-            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            property 'forge.enabledGameTestNamespaces', mod_id
         }
 
         data {
-            data()
 
             // example of overriding the workingDirectory set in configureEach above, uncomment if you want to use it
             // gameDirectory = project.file('run-data')
 
             // Specify the modid for data generation, where to output the resulting resource, and where to look for existing resources.
-            programArguments.addAll '--mod', project.mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
+            args '--mod', project.mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
         }
 
         // applies to all the run configs above
@@ -77,42 +79,40 @@ neoForge {
             // "SCAN": For mods scan.
             // "REGISTRIES": For firing of registry events.
             // "REGISTRYDUMP": For getting the contents of all registries.
-            systemProperty 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.markers', 'REGISTRIES'
 
             // Recommended logging level for the console
             // You can set various levels here.
             // Please read: https://stackoverflow.com/questions/2031163/when-to-use-the-different-log-levels
-            logLevel = org.slf4j.event.Level.DEBUG
-        }
-    }
+            property 'forge.logging.console.level', 'debug'
 
-    mods {
-        // define mod <-> source bindings
-        // these are used to tell the game which sources are for which mod
-        // mostly optional in a single mod project
-        // but multi mod projects should define one per mod
-        "${mod_id}" {
-            sourceSet(sourceSets.main)
+            mods {
+                // define mod <-> source bindings
+                // these are used to tell the game which sources are for which mod
+                // mostly optional in a single mod project
+                // but multi mod projects should define one per mod
+                "${mod_id}" {
+                    source sourceSets.main
+                }
+            }
         }
     }
+}
+
+mixin {
+    add sourceSets.main, "${mod_id}.refmap.json"
+
+    config "${mod_id}.mixins.json"
 }
 
 // Include resources generated by data generators.
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 repositories {
-    exclusiveContent {
-        forRepository { maven { url = "https://api.modrinth.com/maven" } }
-        filter { includeGroup("maven.modrinth") }
-    }
-    exclusiveContent {
-        forRepository { maven { url = "https://maven.blamejared.com" } }
-        filter { includeGroup("vazkii.patchouli") }
-    }
-    exclusiveContent {
-        forRepository { maven { url = "https://maven.blamejared.com/" } }
-        filter { includeGroup("mezz.jei") }
-    }
+    // exclusiveContent breaks fg.deobf for some reason and trying without fg.deobf makes it fail to start
+    maven { url = "https://api.modrinth.com/maven" }
+    maven { url = "https://maven.blamejared.com" }
+
     exclusiveContent {
         forRepository { maven { url = "https://maven.terraformersmc.com/" } }
         filter { includeGroup("dev.emi") }
@@ -120,57 +120,71 @@ repositories {
 }
 
 // Taken from TFC project.gradle.kts
-final String minecraftVersion = project.parchment_minecraft_version
-final String patchouliVersion = "1.21.1-92-NEOFORGE"
-final String jeiVersion = "19.22.1.316"
-final String emiVersion = "1.1.22+1.21.1"
+final String patchouliVersion = "1.20.1-81-FORGE"
+final String jeiVersion = "15.20.0.127"
+final String emiVersion = "1.1.22+1.20.1"
 
 dependencies {
+    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+
+    // Minecraft
+    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+
     // Sodium/Lithium for dev
-    runtimeOnly "maven.modrinth:sodium:mc1.21.1-0.6.13-neoforge"
-    runtimeOnly "maven.modrinth:lithium:mc1.21.1-0.15.0-neoforge"
+    //runtimeOnly "maven.modrinth:sodium:mc1.21.1-0.6.13-neoforge"
+    //runtimeOnly "maven.modrinth:lithium:mc1.21.1-0.15.0-neoforge"
 
     // Patchouli is required by TerraFirmaCraft.
-    implementation("vazkii.patchouli:Patchouli:$patchouliVersion")
+    implementation fg.deobf("vazkii.patchouli:Patchouli:$patchouliVersion")
 
     // TerraFirmaCraft
-    implementation "maven.modrinth:terrafirmacraft:4.0.1-beta"
+    implementation fg.deobf("maven.modrinth:terrafirmacraft:3.2.7")
 
     // EMI
-    compileOnly("dev.emi:emi-neoforge:${emiVersion}:api")
+    compileOnly("dev.emi:emi-forge:${emiVersion}:api")
     //runtimeOnly("dev.emi:emi-neoforge:${emiVersion}")
 
     // JEI
-    compileOnly("mezz.jei:jei-${minecraftVersion}-common-api:${jeiVersion}")
-    compileOnly("mezz.jei:jei-${minecraftVersion}-neoforge-api:${jeiVersion}")
-    runtimeOnly("mezz.jei:jei-${minecraftVersion}-neoforge:${jeiVersion}")
+    compileOnly("mezz.jei:jei-${minecraft_version}-common-api:${jeiVersion}")
+    compileOnly("mezz.jei:jei-${minecraft_version}-forge-api:${jeiVersion}")
+    //runtimeOnly("mezz.jei:jei-${minecraft_version}-forge:${jeiVersion}")
 }
 
 // This block of code expands all declared replace properties in the specified resource targets.
 // A missing property will result in an error. Properties are expanded using ${} Groovy notation.
-var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
-    var replaceProperties = [minecraft_version      : minecraft_version,
-                             minecraft_version_range: minecraft_version_range,
-                             neo_version            : neo_version,
-                             neo_version_range      : neo_version_range,
-                             loader_version_range   : loader_version_range,
-                             mod_id                 : mod_id,
-                             mod_name               : mod_name,
-                             mod_license            : mod_license,
-                             mod_version            : mod_version,
-                             mod_authors            : mod_authors,
-                             mod_description        : mod_description]
+tasks.named('processResources', ProcessResources).configure {
+    var replaceProperties = [minecraft_version   : minecraft_version, minecraft_version_range: minecraft_version_range,
+                             forge_version       : forge_version, forge_version_range: forge_version_range,
+                             loader_version_range: loader_version_range,
+                             mod_id              : mod_id, mod_name: mod_name, mod_license: mod_license, mod_version: mod_version,
+                             mod_authors         : mod_authors, mod_description: mod_description,]
+
     inputs.properties replaceProperties
-    expand replaceProperties
-    from "src/main/templates"
-    into "build/generated/sources/modMetadata"
+
+    filesMatching(['META-INF/mods.toml', 'pack.mcmeta']) {
+        expand replaceProperties + [project: project]
+    }
+}
+
+tasks.named('jar', Jar).configure {
+    manifest {
+        attributes(["Specification-Title"     : mod_id,
+                    "Specification-Vendor"    : mod_authors,
+                    "Specification-Version"   : "1", // We are version 1 of ourselves
+                    "Implementation-Title"    : project.name,
+                    "Implementation-Version"  : project.jar.archiveVersion,
+                    "Implementation-Vendor"   : mod_authors,
+                    "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")])
+    }
+
+    // This is the preferred method to reobfuscate your jar file
+    finalizedBy 'reobfJar'
 }
 
 // Include the output of "generateModMetadata" as an input directory for the build
 // this works with both building through Gradle and the IDE.
-sourceSets.main.resources.srcDir generateModMetadata
+//sourceSets.main.resources.srcDir generateModMetadata
 // To avoid having to run "generateModMetadata" manually, make it run on every project reload
-neoForge.ideSyncTask generateModMetadata
 
 // Example configuration to allow publishing using the maven-publish plugin
 publishing {
@@ -192,4 +206,7 @@ idea {
         downloadSources = true
         downloadJavadoc = true
     }
+}
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
 }

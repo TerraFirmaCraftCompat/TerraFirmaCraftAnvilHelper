@@ -1,8 +1,9 @@
 package com.fox2code.tfcah.client;
 
-import net.dries007.tfc.common.component.forge.ForgeStep;
-import net.dries007.tfc.common.component.forge.Forging;
+import net.dries007.tfc.common.capabilities.forge.ForgeStep;
+import net.dries007.tfc.common.capabilities.forge.Forging;
 import net.dries007.tfc.common.recipes.AnvilRecipe;
+import net.minecraft.world.level.Level;
 
 import java.util.List;
 
@@ -22,24 +23,28 @@ public record TerraFirmaCraftAnvilSolution(TerraFirmaCraftAnvilRecipeInfo terraF
         }
     }
 
-    public int getStepForForging(Forging forging) {
-        AnvilRecipe anvilRecipe = forging.getRecipe();
-        final int currentTarget = forging.target();
+    public int getStepForForging(Forging forging, Level level) {
+        AnvilRecipe anvilRecipe = forging.getRecipe(level);
+        final int currentTarget = forging.getWorkTarget();
         if (this.terraFirmaCraftAnvilRecipeInfo == null ||
                 this.terraFirmaCraftAnvilRecipeInfo.anvilRecipe != anvilRecipe ||
                 this.target != currentTarget) {
             return -1;
         }
-        final int currentWork = forging.work();
+        final int currentWork = forging.getWork();
         final int len = this.forgeIndexes.length;
         if (currentWork == currentTarget) {
             // Check for fully completed solution
-            List<ForgeStep> lastSteps = forging.lastSteps();
+            ForgeStep[] lastSteps = new ForgeStep[3];
+
+            lastSteps[0] = forging.getSteps().thirdLast();
+            lastSteps[1] = forging.getSteps().secondLast();
+            lastSteps[2] = forging.getSteps().last(); // this is prolly bad, from testing tho it seemed to work fine
             ForgeStep[] last3Steps = this.terraFirmaCraftAnvilRecipeInfo.last3Steps;
             boolean valid = true;
             for (int i2 = 3; i2 > 0; i2--) {
                 if (last3Steps[3 - i2] != null &&
-                        last3Steps[3 - i2] != getStep(lastSteps, i2)) {
+                        last3Steps[3 - i2] != getStep(List.of(lastSteps), i2)) {
                     valid = false;
                     break;
                 }
@@ -51,7 +56,13 @@ public record TerraFirmaCraftAnvilSolution(TerraFirmaCraftAnvilRecipeInfo terraF
         int i = 1;
         if (len > 3) {
             // Strict check for the last 3 steps
-            List<ForgeStep> lastSteps = forging.lastSteps();
+            ForgeStep[] lastSteps = new ForgeStep[3];
+
+            lastSteps[0] = forging.getSteps().thirdLast();
+            lastSteps[1] = forging.getSteps().secondLast();
+            lastSteps[2] = forging.getSteps().last(); // same as the above
+
+
             ForgeStep[] last3Steps = this.terraFirmaCraftAnvilRecipeInfo.last3Steps;
             for (; i <= 3; i++) {
                 int expectedWork = this.forgeIndexes[len - i];
@@ -63,7 +74,7 @@ public record TerraFirmaCraftAnvilSolution(TerraFirmaCraftAnvilRecipeInfo terraF
                         // last; i -> 2; i2 -> 1; lastStepsIndex -> 0;
                         int lastStepsIndex = 3 - (i + i2);
                         if (last3Steps[lastStepsIndex] != null &&
-                                last3Steps[lastStepsIndex] != getStep(lastSteps, i2)) {
+                                last3Steps[lastStepsIndex] != getStep(List.of(lastSteps), i2)) {
                             valid = false;
                             break;
                         }
