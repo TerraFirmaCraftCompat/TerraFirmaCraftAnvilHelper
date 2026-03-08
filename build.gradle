@@ -138,7 +138,7 @@ dependencies {
     implementation fg.deobf("vazkii.patchouli:Patchouli:$patchouliVersion")
 
     // TerraFirmaCraft
-    implementation fg.deobf("maven.modrinth:terrafirmacraft:3.2.7")
+    implementation fg.deobf("maven.modrinth:terrafirmacraft:3.2.20")
 
     // EMI
     compileOnly("dev.emi:emi-forge:${emiVersion}:api")
