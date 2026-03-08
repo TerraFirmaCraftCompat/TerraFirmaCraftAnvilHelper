@@ -24,7 +24,7 @@ public class MixinAnvilStepButton extends Button {
         super(builder);
     }
 
-    @Inject(method = "renderWidget", at = @At("HEAD"), cancellable = true, remap = false)
+    @Inject(method = "m_87963_", at = @At("HEAD"), cancellable = true, remap = false)
     public void onRenderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
         if (TerraFirmaCraftAnvilHelperClient.shouldGlow(this.step)) {
             GuiGraphicsHelper.blitYellowBlink(graphics, AnvilScreen.BACKGROUND, this.getX(), this.getY(), 16, 16,
